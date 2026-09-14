@@ -676,6 +676,7 @@
   function showBusiness(){
     $('screen-calc').classList.remove('active');
     $('screen-business').classList.add('active');
+    window.scrollTo(0, 0);
     $('back-btn').style.display = 'flex';
     $('header-title').textContent = 'Your Savings';
     $('header-sub').textContent = 'Prepared by Safe Oil Solutions';
@@ -690,6 +691,7 @@
   function showCalc(){
     $('screen-business').classList.remove('active');
     $('screen-calc').classList.add('active');
+    window.scrollTo(0, 0);
     $('back-btn').style.display = 'none';
     $('header-title').textContent = 'Deal Calculator';
     $('header-sub').textContent = 'Safe Oil Solutions';
