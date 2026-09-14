@@ -163,6 +163,15 @@
   .bc-hero .amt{font-size:64px;font-weight:700;color:var(--accent-text);line-height:1;letter-spacing:-0.01em;}
   .bc-hero .sub{font-size:15px;color:var(--text-muted);margin-top:10px;}
 
+  .bc-scenarios{display:flex;gap:12px;margin-bottom:20px;}
+  .bc-scenarios .scenario-col{
+    flex:1;text-align:center;background:var(--surface-2);border:1px solid var(--border);
+    border-radius:12px;padding:14px 8px;
+  }
+  .bc-scenarios .s-label{font-size:12.5px;color:var(--text-muted);margin-bottom:6px;}
+  .bc-scenarios .s-amt{font-size:24px;font-weight:700;color:var(--accent-text);line-height:1;}
+  .bc-scenarios .s-sub{font-size:11.5px;color:var(--text-muted);margin-top:4px;}
+
   .bc-table{border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px;}
   .bc-table .bc-head{display:flex;background:var(--surface-2);font-size:12px;color:var(--text-muted);}
   .bc-table .bc-head div{flex:1;padding:10px 12px;text-align:center;}
@@ -280,7 +289,7 @@
       </div>
       <div class="field">
         <label for="reduction">Reduction in oil used <span class="live num" id="reduction-live">30%</span></label>
-        <input type="range" id="reduction" min="0" max="40" step="1" value="30">
+        <input type="range" id="reduction" min="0" max="50" step="1" value="30">
       </div>
       <div class="field">
         <label for="subscription">Weekly subscription fee</label>
@@ -390,6 +399,19 @@
         <div class="rval current num" id="bc-total-current">—</div>
         <div class="arrow-col">→</div>
         <div class="rval new num" id="bc-total-new">—</div>
+      </div>
+    </div>
+
+    <div class="bc-scenarios">
+      <div class="scenario-col">
+        <div class="s-label">At 30% reduction</div>
+        <div class="s-amt num" id="bc-scenario-30">—</div>
+        <div class="s-sub">per year</div>
+      </div>
+      <div class="scenario-col">
+        <div class="s-label">At 50% reduction</div>
+        <div class="s-amt num" id="bc-scenario-50">—</div>
+        <div class="s-sub">per year</div>
       </div>
     </div>
 
@@ -541,6 +563,15 @@
     const annualGM = (adder * reducedUsageLb + subscription) * 52;
     const recoveredUcoLb = reducedUsageLb * (settings.ucoRecovery/100);
     const annualGMwithUco = annualGM + (recoveredUcoLb * settings.wasteOilMarket * 52);
+
+    // Scenario strip: same proposed price/lb, different reduction% assumptions
+    const scenarioAnnual = (pct)=>{
+      const usage = currentUsageLb * (1 - pct/100);
+      const cost = usage * proposedPriceLb + subscription;
+      return (currentWeeklyCost - cost) * 52;
+    };
+    $('bc-scenario-30').textContent = money(scenarioAnnual(30), 0);
+    $('bc-scenario-50').textContent = money(scenarioAnnual(50), 0);
 
     $('out-currentPriceLb').textContent = money(currentPriceLb) + '/lb';
     $('out-proposedPriceLb').textContent = money(proposedPriceLb) + '/lb';
