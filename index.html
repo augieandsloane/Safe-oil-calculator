@@ -192,6 +192,9 @@
     transform:translateY(100%);
     transition:transform .25s ease;
     z-index:11;
+    max-height:85vh;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
   }
   #sheet.active, #share-modal.active{transform:translateY(0);}
   #sheet h2, #share-modal h2{margin:0 0 4px;font-size:17px;font-weight:600;}
@@ -462,11 +465,42 @@
 <script>
   const $ = id => document.getElementById(id);
 
+  const STORAGE_KEY = 'safeOilSettings';
   const settings = { landedPrice: 0.88, wasteOilMarket: 0.68, boxWeight: 35, gmTarget: 6750, ucoRecovery: 50 };
   let manualAdder = null; // null = auto (solved for gmTarget); number = rep has dragged the slider
+
+  function saveSettings(){
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        ...settings,
+        repName: $('repName').value,
+        repPhone: $('repPhone').value,
+        repEmail: $('repEmail').value,
+      }));
+    } catch(e){ /* localStorage unavailable (private browsing, sandboxed preview, etc.) — settings just won't persist */ }
+  }
+
+  function loadSettings(){
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      ['landedPrice','wasteOilMarket','boxWeight','gmTarget','ucoRecovery'].forEach(k=>{
+        if (saved[k] !== undefined){ settings[k] = saved[k]; $(k).value = saved[k]; }
+      });
+      if (saved.repName) $('repName').value = saved.repName;
+      if (saved.repPhone) $('repPhone').value = saved.repPhone;
+      if (saved.repEmail) $('repEmail').value = saved.repEmail;
+    } catch(e){ /* localStorage unavailable */ }
+  }
+
   ['landedPrice','wasteOilMarket','boxWeight','gmTarget','ucoRecovery'].forEach(k=>{
-    $(k).addEventListener('input', e=>{ settings[k] = parseFloat(e.target.value)||0; calc(); });
+    $(k).addEventListener('input', e=>{ settings[k] = parseFloat(e.target.value)||0; calc(); saveSettings(); });
   });
+  ['repName','repPhone','repEmail'].forEach(k=>{
+    $(k).addEventListener('input', saveSettings);
+  });
+  loadSettings();
 
   const money = (n, d=2) => '$' + (isFinite(n)?n:0).toLocaleString('en-US',{minimumFractionDigits:d, maximumFractionDigits:d});
 
@@ -808,7 +842,7 @@
   $('close-share-btn').addEventListener('click', closeShareModal);
 
   // settings sheet
-  function openSheet(){ $('overlay').classList.add('active'); $('sheet').classList.add('active'); }
+  function openSheet(){ $('overlay').classList.add('active'); $('sheet').classList.add('active'); $('sheet').scrollTop = 0; }
   function closeSheet(){ $('overlay').classList.remove('active'); $('sheet').classList.remove('active'); }
   $('gear-btn').addEventListener('click', openSheet);
   $('overlay').addEventListener('click', ()=>{ closeSheet(); closeShareModal(); });
