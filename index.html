@@ -489,7 +489,8 @@
 
   const STORAGE_KEY = 'safeOilSettings';
   const settings = { landedPrice: 0.88, wasteOilMarket: 0.68, boxWeight: 35, gmTarget: 6750, ucoRecovery: 50 };
-  let manualAdder = null; // null = auto (solved for gmTarget); number = rep has dragged the slider
+  let manualAdder = null; // set when the rep drags the adder slider/field — a true override
+  let baseAdder = null;   // the auto-suggested value, frozen once computed; only recomputed on a new deal or explicit reset — never by reduction/subscription changes
 
   function saveSettings(){
     try {
@@ -547,8 +548,11 @@
       requiredAdder = (settings.gmTarget/52 - subscription) / reducedUsageLb;
       if (requiredAdder < 0) requiredAdder = 0;
     }
+    // Freeze the auto-suggested default once, on load or a new deal — reduction/subscription
+    // tweaks after that recalc everything else but never silently move the adder.
+    if (manualAdder === null && baseAdder === null && solvable) baseAdder = requiredAdder;
 
-    const adder = manualAdder !== null ? manualAdder : requiredAdder;
+    const adder = manualAdder !== null ? manualAdder : (baseAdder !== null ? baseAdder : requiredAdder);
     if (solvable && document.activeElement !== $('adder') && document.activeElement !== $('adder-number')){
       $('adder').value = adder;
       $('adder-number').value = adder.toFixed(2);
@@ -609,7 +613,10 @@
     $('bc-reduction').textContent = reductionPct + '%';
   }
 
-  ['boxesPerWeek','costPerBox','reduction','subscription'].forEach(id=>{
+  ['boxesPerWeek','costPerBox'].forEach(id=>{
+    $(id).addEventListener('input', ()=>{ manualAdder = null; baseAdder = null; calc(); });
+  });
+  ['reduction','subscription'].forEach(id=>{
     $(id).addEventListener('input', calc);
   });
 
@@ -622,7 +629,7 @@
     const v = parseFloat(e.target.value);
     if (!isNaN(v)){ manualAdder = v; calc(); }
   });
-  $('reset-adder').addEventListener('click', ()=>{ manualAdder = null; calc(); });
+  $('reset-adder').addEventListener('click', ()=>{ manualAdder = null; baseAdder = null; calc(); });
 
   $('reset-btn').addEventListener('click', ()=>{
     $('boxesPerWeek').value = '';
@@ -630,6 +637,7 @@
     $('reduction').value = 30;
     $('subscription').value = 25;
     manualAdder = null;
+    baseAdder = null;
     calc();
   });
 
