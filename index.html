@@ -162,15 +162,19 @@
   .bc-hero .eyebrow{font-size:14px;color:var(--text-muted);margin-bottom:8px;}
   .bc-hero .amt{font-size:64px;font-weight:700;color:var(--accent-text);line-height:1;letter-spacing:-0.01em;}
   .bc-hero .sub{font-size:15px;color:var(--text-muted);margin-top:10px;}
+  .zero-capex{
+    display:inline-block;margin-top:14px;padding:8px 16px;border-radius:20px;
+    background:var(--green-bg);color:var(--green);font-size:13px;font-weight:600;
+  }
 
   .bc-scenarios{display:flex;gap:12px;margin-bottom:20px;}
   .bc-scenarios .scenario-col{
     flex:1;text-align:center;background:var(--surface-2);border:1px solid var(--border);
     border-radius:12px;padding:14px 8px;
   }
-  .bc-scenarios .s-label{font-size:12.5px;color:var(--text-muted);margin-bottom:6px;}
-  .bc-scenarios .s-amt{font-size:24px;font-weight:700;color:var(--accent-text);line-height:1;}
-  .bc-scenarios .s-sub{font-size:11.5px;color:var(--text-muted);margin-top:4px;}
+  .bc-scenarios .s-label{font-size:13px;color:var(--text-muted);margin-bottom:6px;}
+  .bc-scenarios .s-amt{font-size:32px;font-weight:700;color:var(--accent-text);line-height:1;}
+  .bc-scenarios .s-sub{font-size:12px;color:var(--text-muted);margin-top:5px;}
 
   .bc-table{border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px;}
   .bc-table .bc-head{display:flex;background:var(--surface-2);font-size:12px;color:var(--text-muted);}
@@ -187,6 +191,13 @@
   .bc-row.total .rval{padding:16px 8px;}
   .bc-row.total .rval.new{color:var(--accent-text);}
   .bc-row.total .arrow-col{color:var(--accent-text);font-size:18px;}
+  .proof-row{cursor:pointer;}
+  .proof-dot{color:var(--accent-text);font-size:12px;margin-left:2px;}
+  .proof-detail{
+    display:none;font-size:12.5px;color:var(--text-muted);line-height:1.5;
+    padding:4px 12px 14px;border-top:1px solid var(--border);background:var(--surface-2);
+  }
+  .proof-detail.open{display:block;}
 
   .bc-footnote{font-size:12px;color:var(--text-muted);text-align:center;margin-top:4px;line-height:1.5;}
 
@@ -354,6 +365,7 @@
       <div class="eyebrow" id="bc-eyebrow">Your savings with Safe Oil</div>
       <div class="amt num" id="bc-annual">—</div>
       <div class="sub">per year · <span id="bc-weekly">—</span> per week</div>
+      <div class="zero-capex">Zero capital cost — Safe Oil installs and maintains the full system</div>
     </div>
 
     <div class="bc-table">
@@ -382,18 +394,20 @@
         <div class="arrow-col">→</div>
         <div class="rval new num" id="bc-sub-new">—</div>
       </div>
-      <div class="bc-row">
+      <div class="bc-row proof-row" id="row-labor">
         <div class="rlabel">Labor efficiency</div>
         <div class="rval current">Labor-intensive</div>
         <div class="arrow-col">→</div>
-        <div class="rval new">Reduced labor</div>
+        <div class="rval new">Reduced labor <span class="proof-dot">ⓘ</span></div>
       </div>
-      <div class="bc-row">
+      <div class="proof-detail" id="proof-labor">Restaurants' #1 reason for switching: a safer frying operation that cuts workers' comp claims and frees staff from manual oil handling.</div>
+      <div class="bc-row proof-row" id="row-quality">
         <div class="rlabel">Oil quality</div>
         <div class="rval current">—</div>
         <div class="arrow-col">→</div>
-        <div class="rval new">Enhanced filtering</div>
+        <div class="rval new">Enhanced filtering <span class="proof-dot">ⓘ</span></div>
       </div>
+      <div class="proof-detail" id="proof-quality">Automated filtering keeps oil quality consistent fryer to fryer — better, more consistent food with less waste.</div>
       <div class="bc-row total">
         <div class="rlabel">Total cost / week</div>
         <div class="rval current num" id="bc-total-current">—</div>
@@ -404,12 +418,12 @@
 
     <div class="bc-scenarios">
       <div class="scenario-col">
-        <div class="s-label">At 30% reduction</div>
-        <div class="s-amt num" id="bc-scenario-30">—</div>
-        <div class="s-sub">per year</div>
+        <div class="s-label">5-year total savings</div>
+        <div class="s-amt num" id="bc-5yr">—</div>
+        <div class="s-sub">at current settings</div>
       </div>
       <div class="scenario-col">
-        <div class="s-label">At 50% reduction</div>
+        <div class="s-label">Potential at 50% reduction</div>
         <div class="s-amt num" id="bc-scenario-50">—</div>
         <div class="s-sub">per year</div>
       </div>
@@ -491,6 +505,7 @@
   const settings = { landedPrice: 0.88, wasteOilMarket: 0.68, boxWeight: 35, gmTarget: 6750, ucoRecovery: 50 };
   let manualAdder = null; // set when the rep drags the adder slider/field — a true override
   let baseAdder = null;   // the auto-suggested value, frozen once computed; only recomputed on a new deal or explicit reset — never by reduction/subscription changes
+  let lastAnnualSavings = 0, last5yr = 0, lastScenario50 = 0; // for the reveal animation on the business-case screen
 
   function saveSettings(){
     try {
@@ -574,8 +589,10 @@
       const cost = usage * proposedPriceLb + subscription;
       return (currentWeeklyCost - cost) * 52;
     };
-    $('bc-scenario-30').textContent = money(scenarioAnnual(30), 0);
-    $('bc-scenario-50').textContent = money(scenarioAnnual(50), 0);
+    lastScenario50 = scenarioAnnual(50);
+    last5yr = annualSavings * 5;
+    $('bc-scenario-50').textContent = money(lastScenario50, 0);
+    $('bc-5yr').textContent = money(last5yr, 0);
 
     $('out-currentPriceLb').textContent = money(currentPriceLb) + '/lb';
     $('out-proposedPriceLb').textContent = money(proposedPriceLb) + '/lb';
@@ -597,6 +614,7 @@
     $('prev-annual').textContent = money(annualSavings, 0);
 
     // customer business-case screen (kept in sync, shown only when the button is tapped)
+    lastAnnualSavings = annualSavings;
     $('bc-weekly').textContent = money(weeklySavings, 0);
     $('bc-annual').textContent = money(annualSavings, 0);
     $('bc-price-current').textContent = money(currentPriceLb) + '/lb';
@@ -642,6 +660,19 @@
   });
 
   // screen navigation — pricing locks automatically when shown to the customer
+  function animateNumber(el, to, duration=900){
+    const from = 0;
+    const start = performance.now();
+    function step(now){
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      el.textContent = money(from + (to - from) * eased, 0);
+      if (t < 1) requestAnimationFrame(step);
+      else el.textContent = money(to, 0);
+    }
+    requestAnimationFrame(step);
+  }
+
   function showBusiness(){
     $('screen-calc').classList.remove('active');
     $('screen-business').classList.add('active');
@@ -652,6 +683,9 @@
     $('editable-fields').setAttribute('disabled','');
     $('editable-fields').classList.add('locked');
     $('lock-banner').style.display = 'flex';
+    animateNumber($('bc-annual'), lastAnnualSavings);
+    animateNumber($('bc-5yr'), last5yr);
+    animateNumber($('bc-scenario-50'), lastScenario50);
   }
   function showCalc(){
     $('screen-business').classList.remove('active');
@@ -668,6 +702,11 @@
   $('back-btn').addEventListener('click', showCalc);
   $('unlock-btn').addEventListener('click', showCalc);
 
+  ['row-labor','row-quality'].forEach(rowId=>{
+    const detailId = 'proof-' + rowId.replace('row-','');
+    $(rowId).addEventListener('click', ()=>{ $(detailId).classList.toggle('open'); });
+  });
+
   // share the business case
   function buildShareText(){
     const rep = $('repName').value.trim();
@@ -681,8 +720,10 @@
     }
     return `Safe Oil savings estimate:\n`
       + `${$('bc-annual').textContent}/year (${$('bc-weekly').textContent}/week)\n`
+      + `5-year total: ${$('bc-5yr').textContent}\n`
       + `Current total cost/week: ${$('bc-total-current').textContent}\n`
-      + `With Safe Oil: ${$('bc-total-new').textContent}`
+      + `With Safe Oil: ${$('bc-total-new').textContent}\n`
+      + `Zero capital cost — we install and maintain the full system`
       + `\n\nSee How It Works: https://safeoilsolutions.com/how-it-works/`
       + repLine;
   }
@@ -709,10 +750,10 @@
     const logoW = 420;
     const logoH = logoImg && logoImg.naturalWidth ? logoImg.naturalHeight * (logoW / logoImg.naturalWidth) : 0;
 
-    const headerH = 60 + logoH + 40 + 44 + 20 + 130 + 50 + 44;
+    const headerH = 60 + logoH + 40 + 44 + 20 + 130 + 50 + 44 + 100;
     const tableHeaderH = 70;
     const totalRowH = 130;
-    const footerH = 70 + (hasRep ? 90 : 0) + 60 + 60;
+    const footerH = 70 + 136 + (hasRep ? 90 : 0) + 60 + 60;
     const H = headerH + tableHeaderH + rows.length * rowH + totalRowH + footerH;
 
     const canvas = document.createElement('canvas');
@@ -743,6 +784,21 @@
     ctx.font = '28px -apple-system, sans-serif';
     ctx.fillText('per year · ' + $('bc-weekly').textContent + ' per week', W / 2, y + 50);
     y += 50 + 44;
+
+    // zero-capex pill
+    const pillText = 'Zero capital cost — we install & maintain the system';
+    ctx.font = '600 24px -apple-system, sans-serif';
+    const pillTextW = ctx.measureText(pillText).width;
+    const pillW = pillTextW + 56, pillH = 54;
+    const pillX = (W - pillW) / 2, pillY = y - 6;
+    ctx.fillStyle = 'rgba(111,194,74,0.18)';
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(pillX, pillY, pillW, pillH, pillH/2) : ctx.rect(pillX, pillY, pillW, pillH);
+    ctx.fill();
+    ctx.fillStyle = '#6FC24A';
+    ctx.textAlign = 'center';
+    ctx.fillText(pillText, W / 2, y + 30);
+    y += pillH + 30;
 
     ctx.strokeStyle = '#35608A';
     ctx.lineWidth = 2;
@@ -793,6 +849,16 @@
     ctx.fillText('→', W * 0.75, y);
     ctx.font = '700 34px "Space Grotesk", -apple-system, sans-serif';
     ctx.fillText($('bc-total-new').textContent, W * 0.88, y, W * 0.2);
+
+    y += 90;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#93A9BA';
+    ctx.font = '24px -apple-system, sans-serif';
+    ctx.fillText('5-year total savings', W / 2, y);
+    y += 46;
+    ctx.fillStyle = '#6FC24A';
+    ctx.font = '700 46px "Space Grotesk", -apple-system, sans-serif';
+    ctx.fillText($('bc-5yr').textContent, W / 2, y);
 
     y += 70;
     ctx.textAlign = 'center';
