@@ -300,7 +300,7 @@
       <button id="unlock-btn" class="link-btn">Edit</button>
     </div>
 
-    <fieldset id="editable-fields">
+    <fieldset class="editable-fields" id="editable-fields-1">
     <div class="card">
       <h2>Client order</h2>
       <div class="row2">
@@ -319,34 +319,6 @@
       <div class="readout divider">
         <span class="k">Their current price / lb</span>
         <span class="v num" id="out-currentPriceLb">—</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Deal levers</h2>
-      <div class="field">
-        <div class="adder-head">
-          <label for="adder" style="margin-bottom:0;">Adder ($/lb over landed)</label>
-          <div class="prefix-wrap adder-input-wrap">
-            <span class="prefix">$</span>
-            <input type="number" id="adder-number" inputmode="decimal" step="0.01" min="0" value="0.42">
-          </div>
-        </div>
-        <input type="range" id="adder" min="0.10" max="1.00" step="0.01" value="0.42">
-      </div>
-      <div class="field">
-        <label for="reduction">Reduction in oil used <span class="live num" id="reduction-live">30%</span></label>
-        <input type="range" id="reduction" min="0" max="50" step="1" value="30">
-      </div>
-      <div class="field">
-        <label for="subscription">Weekly subscription fee</label>
-        <div class="prefix-wrap">
-          <span class="prefix">$</span>
-          <input type="number" id="subscription" inputmode="decimal" value="25" min="0" step="1">
-        </div>
-      </div>
-      <div id="adder-reset-row" style="display:none;text-align:right;margin-top:2px;">
-        <button id="reset-adder" class="link-btn">Reset to minimum ($6,750 target)</button>
       </div>
     </div>
     </fieldset>
@@ -389,6 +361,40 @@
         <div class="sub">customer saves per week · <span id="prev-annual">—</span>/yr</div>
       </div>
     </div>
+
+    <fieldset class="editable-fields" id="editable-fields-2">
+    <div class="card">
+      <h2>Adder</h2>
+      <div class="field">
+        <div class="adder-head">
+          <label for="adder" style="margin-bottom:0;">Adder ($/lb over landed)</label>
+          <div class="prefix-wrap adder-input-wrap">
+            <span class="prefix">$</span>
+            <input type="number" id="adder-number" inputmode="decimal" step="0.01" min="0" value="0.42">
+          </div>
+        </div>
+        <input type="range" id="adder" min="0.10" max="1.00" step="0.01" value="0.42">
+      </div>
+      <div id="adder-reset-row" style="display:none;text-align:right;margin-top:2px;">
+        <button id="reset-adder" class="link-btn">Reset to minimum ($6,750 target)</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Reduction &amp; subscription</h2>
+      <div class="field">
+        <label for="reduction">Reduction in oil used <span class="live num" id="reduction-live">30%</span></label>
+        <input type="range" id="reduction" min="0" max="50" step="1" value="30">
+      </div>
+      <div class="field">
+        <label for="subscription">Weekly subscription fee</label>
+        <div class="prefix-wrap">
+          <span class="prefix">$</span>
+          <input type="number" id="subscription" inputmode="decimal" value="25" min="0" step="1">
+        </div>
+      </div>
+    </div>
+    </fieldset>
 
     <button class="cta-btn" id="show-business-btn">Display Customer Business Case</button>
     <button class="reset-btn" id="reset-btn">Start new deal</button>
@@ -734,8 +740,7 @@
     $('header-title').textContent = 'Your Savings';
     $('header-sub').textContent = 'Prepared by Safe Oil Solutions';
     $('gear-btn').style.display = 'none';
-    $('editable-fields').setAttribute('disabled','');
-    $('editable-fields').classList.add('locked');
+    document.querySelectorAll('.editable-fields').forEach(fs=>{ fs.setAttribute('disabled',''); fs.classList.add('locked'); });
     $('lock-banner').style.display = 'flex';
     animateNumber($('bc-annual'), lastAnnualSavings);
     animateNumber($('bc-5yr'), last5yr);
@@ -749,8 +754,7 @@
     $('header-title').textContent = 'Deal Calculator';
     $('header-sub').textContent = 'Safe Oil Solutions';
     $('gear-btn').style.display = 'flex';
-    $('editable-fields').removeAttribute('disabled');
-    $('editable-fields').classList.remove('locked');
+    document.querySelectorAll('.editable-fields').forEach(fs=>{ fs.removeAttribute('disabled'); fs.classList.remove('locked'); });
     $('lock-banner').style.display = 'none';
   }
   $('show-business-btn').addEventListener('click', showBusiness);
